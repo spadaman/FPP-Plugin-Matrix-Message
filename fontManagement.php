@@ -41,7 +41,7 @@ echo "<li> You're done \n";
 echo "</ul> \n";
 
 ?>
-<form method="post" action="http://<? echo $_SERVER['SERVER_ADDR'].":".$_SERVER['SERVER_PORT']?>/plugin.php?plugin=<?echo $pluginName;?>&page=fontManagement.php">
+<form method="post" action="/plugin.php?plugin=<?echo $pluginName;?>&page=fontManagement.php">
 
 <input type="submit" value="Update Fonts" name="updateFonts" class="buttons">
 

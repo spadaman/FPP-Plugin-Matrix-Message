@@ -1,12 +1,11 @@
 #!/usr/bin/php
 <?
 //error_reporting(0);
-ob_flush();flush();
 //TODO:
 //Oct 31: Installed the ability to send a message directly from a plugin using 'subscribedPlugin' and 'onDemandMessage'
 
 
-$pluginName ="MatrixMessage";
+$pluginName = basename(dirname(__FILE__));;
 $MatrixMessageVersion = "2.0";
 $myPid = getmypid();
 
@@ -26,6 +25,9 @@ require ("lock.helper.php");
 define('LOCK_DIR', '/tmp/');
 define('LOCK_SUFFIX', $pluginName.'.lock');
 $messageQueue_Plugin = "MessageQueue";
+if (strpos($pluginName, "FPP-Plugin") !== false) {
+    $messageQueue_Plugin = "FPP-Plugin-MessageQueue";
+}
 $MESSAGE_QUEUE_PLUGIN_ENABLED=false;
 
 $fpp_matrixtools_Plugin = "fpp-matrixtools";
@@ -36,9 +38,6 @@ $logFile = $settings['logDirectory']."/".$pluginName.".log";
 $messageQueuePluginPath = $pluginDirectory."/".$messageQueue_Plugin."/";
 
 $messageQueueFile = urldecode(ReadSettingFromFile("MESSAGE_FILE",$messageQueue_Plugin));
-
-
-
 
 
 $pluginConfigFile = $settings['configDirectory'] . "/plugin." .$pluginName;
@@ -89,6 +88,12 @@ $MATRIX_PLUGIN_OPTIONS = $pluginSettings['PLUGINS'];
 $MATRIX_FONT= $pluginSettings['FONT'];
 
 $MATRIX_FONT_SIZE= $pluginSettings['FONT_SIZE'];
+$MATRIX_FONT_ANTIALIAS= $pluginSettings['FONT_ANTIALIAS'];
+if (isset($MATRIX_FONT_ANTIALIAS) && $MATRIX_FONT_ANTIALIAS == "1") {
+    $MATRIX_FONT_ANTIALIAS = true;
+} else {
+    $MATRIX_FONT_ANTIALIAS = false;
+}
 $COLOR= urldecode($pluginSettings['COLOR']);
 $MATRIX_PIXELS_PER_SECOND = $pluginSettings['PIXELS_PER_SECOND'];
 
@@ -96,7 +101,11 @@ $INCLUDE_TIME = urldecode($pluginSettings['INCLUDE_TIME']);
 $TIME_FORMAT = urldecode($pluginSettings['TIME_FORMAT']);
 $HOUR_FORMAT = urldecode($pluginSettings['HOUR_FORMAT']);
 
-$DEBUG = urldecode($pluginSettings['DEBUG']);
+if (isset($pluginSettings['DEBUG'])) {
+    $DEBUG = urldecode($pluginSettings['DEBUG']);
+} else {
+    $DEBUG = false;
+}
 
 $SEPARATOR = "|";
 
@@ -131,111 +140,93 @@ if($MATRIX_MESSAGE_TIMEOUT == "" || $MATRIX_MESSAGE_TIMEOUT == null) {
 
 //echo $messageQueueFile."\n";
 
-if(file_exists($messageQueuePluginPath."functions.inc.php"))
-        {
-                include $messageQueuePluginPath."functions.inc.php";
-                $MESSAGE_QUEUE_PLUGIN_ENABLED=true;
+if(file_exists($messageQueuePluginPath."functions.inc.php")) {
+    include $messageQueuePluginPath."functions.inc.php";
+    $MESSAGE_QUEUE_PLUGIN_ENABLED=true;
+} else {
+    logEntry("Message Queue not installed, cannot use this plugin with out it");
+    lockHelper::unlock();
+    exit(0);
+}
 
-        } else {
-                logEntry("Message Queue not installed, cannot use this plugin with out it");
-                lockHelper::unlock();
-                exit(0);
-        }
-
-if(isset($_GET['subscribedPlugin'])) {
+if (isset($_GET['subscribedPlugin'])) {
     $subscribedPlugin = $_GET['subscribedPlugin'];
     logEntry("Only getting plugin messages for plugin: ".$subscribedPlugin);
     $MATRIX_PLUGIN_OPTIONS = $subscribedPlugin;
 }
 
-if(isset($_GET['onDemandMessage'])) {
+if (isset($_GET['onDemandMessage'])) {
 	$onDemandMessage = $_GET['onDemandMessage'];
 	logEntry("Receiving an onDemandMessage from subscribed plugin: ".$subscribedPlugin);
 	$MATRIX_PLUGIN_OPTIONS = $subscribedPlugin;
 }
 
-        
 $MATRIX_ACTIVE = false;
         
 //TODO: Change this to get pluguin messages from their resprective datbases. once this is done, then can just get new plugin messages that way!
 
-if($MESSAGE_QUEUE_PLUGIN_ENABLED) {
-	if($onDemandMessage != "") {
+if ($MESSAGE_QUEUE_PLUGIN_ENABLED) {
+	if(isset($onDemandMessage) && $onDemandMessage != "") {
 		//got an ondemand message, and we may get more and more of these so we should output them all
-		
-	
-		$queueMessages = array(time()."|".$onDemandMessage."|".$subscribedPlugin);
-		if($DEBUG) {
-			logEntry("MATRIX MESSAGE: On Demand message mode: ");
-			//logEntry("Message 0: ".$queueMessages[0]);
-		}
-		
+		$queueMessages = array(time() . "|" . $onDemandMessage . "|" . $subscribedPlugin);
 	} else {
         $queueMessages = getNewPluginMessages($MATRIX_PLUGIN_OPTIONS);
-		
 	}
 	
 	$messageCount = count($queueMessages);
-	
-        if($messageCount >0 ) {
+    if ($messageCount > 0) {
         //if($queueMessages != null || $queueMessages != "") {
         $MATRIX_ACTIVE = true;
         $queueCount =0;
         
         $LOOP_COUNT =0;
-        	do {
-        	//	$queueCount =0;
-        		logEntry("MATRIX MESSAGE: LOOP COUNT: ".$LOOP_COUNT++);
-        		logEntry("MATRIX MESSAGE: QUEUE COUNT: ".$queueCount,0,__FILE__,__LINE__);// $sourceFile, $sourceLine)
-        		if($queueCount >0) {
-        			foreach ($queueMessages as $tmpMSG) {
-        				logEntry("MATRIX MESSAGE: LOOP ID: ".$LOOP_COUNT." MSG: ".$tmpMSG,0,__FILE__,__LINE__);
-        			}
-        		}
-        		//extract the high water mark from the first message and write that back to the plugin! or
-        		//gets the same message twice in a flood of incomming on demand messages
-        		
-        		// Jan 3:$messageQueueParts = explode("|",$queueMessages[0]);
-        	//	logEntry("MATRIX plugin: Writing high water for plugin:".$MATRIX_PLUGIN_OPTIONS." ".urldecode($messageQueueParts[0]));
+        do {
+            logEntry("MATRIX MESSAGE: LOOP COUNT: ".$LOOP_COUNT++);
+            logEntry("MATRIX MESSAGE: QUEUE COUNT: ".$queueCount,0,__FILE__,__LINE__);// $sourceFile, $sourceLine)
+            if($queueCount >0) {
+                foreach ($queueMessages as $tmpMSG) {
+                    logEntry("MATRIX MESSAGE: LOOP ID: ".$LOOP_COUNT." MSG: ".$tmpMSG,0,__FILE__,__LINE__);
+                }
+            }
+            //extract the high water mark from the first message and write that back to the plugin! or
+            //gets the same message twice in a flood of incomming on demand messages
+            
+            // Jan 3:$messageQueueParts = explode("|",$queueMessages[0]);
+            //	logEntry("MATRIX plugin: Writing high water for plugin:".$MATRIX_PLUGIN_OPTIONS." ".urldecode($messageQueueParts[0]));
         	////	WriteSettingToFile("LAST_READ",urldecode($messageQueueParts[0]),$MATRIX_PLUGIN_OPTIONS);
         		
-        		//echo "0: ".$messageParts[0]."\n";
-        		logEntry("-----------------------------------");
+        	//echo "0: ".$messageParts[0]."\n";
+        	logEntry("-----------------------------------");
         		
-				outputMessages($queueMessages);
+            outputMessages($queueMessages);
 			
-				if($DEBUG) 
-					logEntry("MATRIX PLUGIN OPTIONS[0] = ".$MATRIX_PLUGIN_OPTIONS);
-				if((strtoupper($MATRIX_PLUGIN_OPTIONS) != "CFOLNANOMATRIXSYSTEM") && $onDemandMessage != "") {
-					if($DEBUG) {
-						logEntry("MATRIX MESSAGE: On demand mode, querying for new plugin messages");
-					}
-					//get new messages
-					$queueMessages = null;
-					
-					$queueMessages = getNewPluginMessages($MATRIX_PLUGIN_OPTIONS);
-					$queueCount = count($queueMessages);
-					logEntry("Matrix Message NEW QUEUE COUNT: ".$queueCount);
-					
-					sleep(1);
-					
-					
-
+            if($DEBUG)
+                logEntry("MATRIX PLUGIN OPTIONS[0] = ".$MATRIX_PLUGIN_OPTIONS);
+            if((strtoupper($MATRIX_PLUGIN_OPTIONS) != "CFOLNANOMATRIXSYSTEM") && (!isset($onDemandMessage) || $onDemandMessage == "")) {
+				if($DEBUG) {
+					logEntry("MATRIX MESSAGE: On demand mode, querying for new plugin messages");
 				}
-        	} while ($queueCount > 0) ;
+                //get new messages
+                $queueMessages = null;
+                
+                $queueMessages = getNewPluginMessages($MATRIX_PLUGIN_OPTIONS);
+                $queueCount = count($queueMessages);
+                logEntry("Matrix Message NEW QUEUE COUNT: ".$queueCount);
+                
+                sleep(1);
+			}
+       	} while ($queueCount > 0) ;
         
-        	disableMatrixToolOutput();
-        	
-        } else {
-        	logEntry("MATRIX MESSAGE: No messages  exists??");
-        }
+    } else {
+       	logEntry("MATRIX MESSAGE: No messages  exists??");
+    }
         
 } else {
         logEntry("MessageQueue plugin is not enabled/installed");
         lockHelper::unlock();
         exit(0);
 }
-//disableMatrixToolOutput();
+disableMatrixToolOutput($Matrix);
 
 lockHelper::unlock();
 

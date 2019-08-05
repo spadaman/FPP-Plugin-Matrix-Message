@@ -8,8 +8,7 @@ include_once "MatrixFunctions.inc.php";
 
 
 include_once 'version.inc';
-$pluginName = "MatrixMessage";
-
+$pluginName = basename(dirname(__FILE__));
 
 //2.3 - Dec 4 2016 - Remove the mulitple demand messages code - was messing up
 
@@ -38,26 +37,40 @@ if(isset($_POST['updatePlugin']))
 
 if(isset($_POST['submit']))
 {
-	
 	$PLUGINS =  implode(',', $_POST["PLUGINS"]);
+
 //	echo "Writring config fie <br/> \n";
 	WriteSettingToFile("PLUGINS",$PLUGINS,$pluginName);
 	
 //	WriteSettingToFile("ENABLED",urlencode($_POST["ENABLED"]),$pluginName);
 	WriteSettingToFile("FONT",urlencode($_POST["FONT"]),$pluginName);
+    WriteSettingToFile("FONT_ANTIALIAS",urlencode($_POST["FONT_ANTIALIAS"]),$pluginName);
 	WriteSettingToFile("FONT_SIZE",urlencode($_POST["FONT_SIZE"]),$pluginName);
 	WriteSettingToFile("PIXELS_PER_SECOND",urlencode($_POST["PIXELS_PER_SECOND"]),$pluginName);
 	WriteSettingToFile("COLOR",urlencode($_POST["COLOR"]),$pluginName);
 
 	
 	WriteSettingToFile("LAST_READ",urlencode($_POST["LAST_READ"]),$pluginName);
-	WriteSettingToFile("MESSAGE_TIMEOUT",urlencode($_POST["MESSAGE_TIMEOUT"]),$pluginName);
-	
+    if (isset($_POST["MESSAGE_TIMEOUT"])) {
+        WriteSettingToFile("MESSAGE_TIMEOUT",urlencode($_POST["MESSAGE_TIMEOUT"]),$pluginName);
+    } else {
+        WriteSettingToFile("MESSAGE_TIMEOUT", 10, $pluginName);
+    }
+    
 	WriteSettingToFile("MATRIX",urlencode($_POST["MATRIX"]),$pluginName);
-	WriteSettingToFile("INCLUDE_TIME",urlencode($_POST["INCLUDE_TIME"]),$pluginName);
+    if (isset($_POST["INCLUDE_TIME"])) {
+        WriteSettingToFile("INCLUDE_TIME",urlencode($_POST["INCLUDE_TIME"]),$pluginName);
+    } else {
+        WriteSettingToFile("INCLUDE_TIME", 0, $pluginName);
+    }
 	WriteSettingToFile("TIME_FORMAT",urlencode($_POST["TIME_FORMAT"]),$pluginName);
 	WriteSettingToFile("HOUR_FORMAT",urlencode($_POST["HOUR_FORMAT"]),$pluginName);	
 	WriteSettingToFile("OVERLAY_MODE",urlencode($_POST["OVERLAY_MODE"]),$pluginName);
+    
+    $pluginConfigFile = $settings['configDirectory'] . "/plugin." .$pluginName;
+    if (file_exists($pluginConfigFile)) {
+        $pluginSettings = parse_ini_file($pluginConfigFile);
+    }
 }
 
 	
@@ -69,10 +82,18 @@ $PLUGINS = $pluginSettings['PLUGINS'];
 $ENABLED = $pluginSettings['ENABLED'];
 //	$Matrix = urldecode(ReadSettingFromFile("MATRIX",$pluginName));
 $Matrix = urldecode($pluginSettings['MATRIX']);
+//$MatrixHost = urldecode($pluginSettings['MATRIX_HOST']);
+//if (!isset($MatrixHost) || $MatrixHost == "") {
+//    $MatrixHost = $_SERVER['SERVER_ADDR'];
+//}
 //	$LAST_READ = urldecode(ReadSettingFromFile("LAST_READ",$pluginName));
 $LAST_READ = $pluginSettings['LAST_READ'];
 $FONT= urldecode($pluginSettings['FONT']);
 $FONT_SIZE= $pluginSettings['FONT_SIZE'];
+if (!isset($FONT_SIZE) || $FONT_SIZE == "") {
+    $FONT_SIZE = 20;
+}
+$FONT_ANTIALIAS= $pluginSettings['FONT_ANTIALIAS'];
 $PIXELS_PER_SECOND= $pluginSettings['PIXELS_PER_SECOND'];
 $COLOR= urldecode($pluginSettings['COLOR']);
 
@@ -80,7 +101,11 @@ $INCLUDE_TIME = urldecode($pluginSettings['INCLUDE_TIME']);
 $TIME_FORMAT = urldecode($pluginSettings['TIME_FORMAT']);
 $HOUR_FORMAT = urldecode($pluginSettings['HOUR_FORMAT']);
 
-$DEBUG = urldecode($pluginSettings['DEBUG']);
+if (isset($pluginSettings['DEBUG'])) {
+    $DEBUG = urldecode($pluginSettings['DEBUG']);
+} else {
+    $DEBUG = false;
+}
 $overlayMode = urldecode($pluginSettings['OVERLAY_MODE']);
 
 if($overlayMode == "") {
@@ -102,9 +127,24 @@ if($overlayMode == "") {
 
 ?>
 
-<html>
-<head>
-</head>
+<script language="Javascript">
+function updateMatrixList() {
+    var host = $('#MatrixHost').val();
+    var url = 'http://' + host + '/api/overlays/models';
+    $('#MATRIX').empty();
+	$.ajax({
+		url: url,
+		dataType: 'json',
+		success: function(data) {
+           data.forEach(function (element, index) {
+                        var o = new Option(element.Name, element.Name);
+                        $(o).html(element.Name);
+                        $('#MATRIX').append(o);
+                    });
+		}
+	});
+}
+</script>
 
 <div id="<?echo $pluginName;?>" class="settings">
 <fieldset>
@@ -123,7 +163,7 @@ if($overlayMode == "") {
 
 
 
-<form method="post" action="http://<? echo $_SERVER['SERVER_ADDR'].":".$_SERVER['SERVER_PORT']?>/plugin.php?plugin=<?echo $pluginName;?>&page=plugin_setup.php">
+<form method="post" action="/plugin.php?plugin=<?echo $pluginName;?>&page=plugin_setup.php">
 
 
 <?
@@ -142,11 +182,13 @@ PrintSettingCheckbox("Matrix Message Plugin", "ENABLED", $restart = 0, $reboot =
 
 echo "<p/> \n";
 
+// Does not work yet as we need to enable CORS on the api's
+// echo "Matrix Host: ";
+// echo "<input type='text' name='hostname' value='$MatrixHost' id='MatrixHost' onChange='updateMatrixList()'>";
+// echo "<p/>\n";
 
 echo "Matrix Name: ";
-
 PrintMatrixList("MATRIX",$Matrix);
-
 
 echo "<p/>\n";
 
@@ -188,7 +230,11 @@ printFontsInstalled("FONT",$FONT);
 echo "<p/> \n";
 echo "Font Size: \n";
 printFontSizes("FONT_SIZE",$FONT_SIZE);
-
+$aachecked = "";
+if (isset($FONT_ANTIALIAS) && $FONT_ANTIALIAS == "1") {
+    $aachecked = "checked";
+}
+echo "<input type='checkbox' name='FONT_ANTIALIAS' value='1' $aachecked >Anti-Aliased</input>";
 echo "<p/> \n";
 
 echo "Pixels per second: \n";
@@ -227,7 +273,7 @@ echo "<p/> \n";
 <p>To report a bug, please file it against <?php echo $gitURL;?>
 </form>
 
-<form method="post" action="http://<? echo $_SERVER['SERVER_NAME']?>/plugin.php?plugin=<?echo $pluginName;?>&page=fontManagement.php">
+<form method="post" action="/plugin.php?plugin=<?echo $pluginName;?>&page=fontManagement.php">
 <input id="fontManagement" name="Font Management" type="submit" value="Font Management">
 </form>
 

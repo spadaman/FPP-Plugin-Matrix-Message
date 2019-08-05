@@ -1,61 +1,42 @@
 <?php
 
+include_once dirname(__FILE__) . "/../fpp-matrixtools/scripts/matrixtools.php.inc";
+
 function printHourFormats($ELEMENT_NAME,$ELEMENT_SELECTED)
-
-
 {
 
 	global $DEBUG;
 
 	$T_FORMATS = array("12","24");
 
-
 	echo "<select  name=\"".$ELEMENT_NAME."\">";
 
 	//print_r($PLUGINS_READ);
 
-
 	for($i=0;$i<=count($T_FORMATS)-1;$i++) {
-
-
-
 		if($T_FORMATS[$i] == $ELEMENT_SELECTED) {
-
 			echo "<option selected value=\"" . $ELEMENT_SELECTED . "\">" . $ELEMENT_SELECTED . " HR</option>";
 		} else {
-
 			echo "<option value=\"" . $T_FORMATS[$i] . "\">" . $T_FORMATS[$i] . " HR</option>";
 		}
-
 	}
 	echo "</select>";
 }
 
 function printTimeFormats($ELEMENT_NAME,$ELEMENT_SELECTED)
-
-
 {
 
 	global $DEBUG;
 
 	$T_FORMATS = array("h:i" => "HH:MM","h:i:s" => "HH:MM:SS");
-	
-
-	
-	
 	echo "<select  name=\"".$ELEMENT_NAME."\">";
 	
 	//print_r($PLUGINS_READ);
 	foreach($T_FORMATS as $key => $value)
 	{
-		
-		
-		
 		if($key == $ELEMENT_SELECTED) {
-
 			echo "<option selected value=\"" . $key . "\">" . $value . "</option>";
 		} else {
-
 			echo "<option value=\"" . $key . "\">" .  $value . "</option>";
 		}
 
@@ -64,10 +45,7 @@ function printTimeFormats($ELEMENT_NAME,$ELEMENT_SELECTED)
 }
 
 function createMatrixEventFile() {
-
 	global $eventDirectory,$pluginDirectory,$pluginName,$scriptDirectory;
-
-
 
 	//echo "next event file name available: ".$nextEventFilename."\n";
 
@@ -95,33 +73,25 @@ function createMatrixEventFile() {
 		$scriptCMD = $pluginDirectory."/".$pluginName."/"."matrix.php";
 		createScriptFile($EVENT_KEY.".sh",$scriptCMD);
 	}
-
-
 	//echo "$key => $val\n";
-		
-
-
-
-
-
 }
+    
+    
 function outputMessages($queueMessages) {
-
-	global $DEBUG, $pluginDirectory,$MESSAGE_TIMEOUT, $fpp_matrixtools_Plugin, $fpp_matrixtools_Plugin_Script,$Matrix,$MATRIX_FONT,$MATRIX_FONT_SIZE,$MATRIX_PIXELS_PER_SECOND,$COLOR, $INCLUDE_TIME, $TIME_FORMAT, $HOUR_FORMAT,$SEPARATOR;
+	global $DEBUG, $pluginDirectory,$MESSAGE_TIMEOUT, $fpp_matrixtools_Plugin, $fpp_matrixtools_Plugin_Script,$Matrix,$MATRIX_FONT,$MATRIX_FONT_SIZE,$MATRIX_PIXELS_PER_SECOND,$COLOR, $INCLUDE_TIME, $TIME_FORMAT, $HOUR_FORMAT,$SEPARATOR, $MATRIX_FONT_ANTIALIAS;
 
 	//print_r($queueMessages);
 	
 	if($DEBUG)
 		logEntry("MESSAGE QUEUE: Inside function ".__METHOD__,0,__FILE__,__LINE__);
 
-	if(count($queueMessages) <=0) {
+	if (count($queueMessages) <=0) {
 		logEntry("No messages to output ");
 		return;
 	}
 	
 
 	If (strtoupper(trim($COLOR)) == "RANDOM") {
-		
 		//print_r ("Start counter");
 		$counter=rand(0,5);
 		//print_r ("Start switch");
@@ -160,69 +130,63 @@ function outputMessages($queueMessages) {
 
 	enableMatrixToolOutput();
 
-	for($i=0;$i<=count($queueMessages)-1;$i++) {
-	$messageText = "";
+    for ($i=0;$i<=count($queueMessages)-1;$i++) {
+        $messageText = "";
 	
-	if($INCLUDE_TIME == 1 || $INCLUDE_TIME == "on") {
+        if($INCLUDE_TIME == 1 || $INCLUDE_TIME == "on") {
 		
-		switch ($HOUR_FORMAT) {
-			
-			case "12":
-				$messageTime = date($TIME_FORMAT);
-				break;
-				
-			case "24":
-				
-				$messageTime = date($TIME_FORMAT);
-				
-				break;
-		}
-		
-		logEntry( "Message time: ".$messageTime);
-		
-		$messageText = "Time: ".$messageTime." ".$SEPARATOR." ";
-	}
-	
-	//for($i=0;$i<=count($queueMessages)-1;$i++) {
+            switch ($HOUR_FORMAT) {
+                
+                case "12":
+                    $messageTime = date($TIME_FORMAT);
+                    break;
+                    
+                case "24":
+                    
+                    $messageTime = date($TIME_FORMAT);
+                    
+                    break;
+            }
+            
+            logEntry( "Message time: ".$messageTime);
+            
+            $messageText = "Time: ".$messageTime." ".$SEPARATOR." ";
+        }
+    	
+        $messageParts = explode("|",$queueMessages[$i]);
 
-		$messageParts = explode("|",$queueMessages[$i]);
+        //echo "0: ".$messageParts[0]."\n";
+        //echo "1: ".$messageParts[1]."\n";
+        //echo "2: " .$messageParts[2]."\n";
+        //echo "3: ".$messageParts[3]."\n";
 
-
-		//echo "0: ".$messageParts[0]."\n";
-		//echo "1: ".$messageParts[1]."\n";
-		//echo "2: " .$messageParts[2]."\n";
-		//echo "3: ".$messageParts[3]."\n";
-
-		$messageText .= urldecode($messageParts[1]);
-		logEntry("MATRIX PLUGIN: Writing last read for plugin BEFORE sending Message!: ".urldecode($messageParts[2]). ": ".urldecode($messageParts[0]));
-		
-		WriteSettingToFile("LAST_READ",urldecode($messageParts[0]),urldecode($messageParts[2]));
-
-		$cmd = $pluginDirectory."/".$fpp_matrixtools_Plugin."/".$fpp_matrixtools_Plugin_Script." --blockname \"".$Matrix."\" --color '".$COLOR."' --font ".$MATRIX_FONT." --fontsize ".$MATRIX_FONT_SIZE." --pixelspersecond ".$MATRIX_PIXELS_PER_SECOND. " --message \"".urldecode($messageText)."\"";
-
-		logEntry("Matrix output cmd: ".$cmd);
-		exec($cmd,$outputResults);
-
-
-		sleep(1);
-		clearMatrix();
-		//write the last read right after the message goes out!!! back to the plugin that requested it!
-
-
-		//sleep(1);
-		//$clearLineCmd = "/bin/echo \"\" > ".$matrixFIFO;
-		//exec($clearLineCmd,$clearOutput);
-
-	}
-
-
+        $messageText .= urldecode($messageParts[1]);
+        logEntry("MATRIX PLUGIN: Writing last read for plugin BEFORE sending Message!: ".urldecode($messageParts[2]). ": ".urldecode($messageParts[0]));
+    
+        WriteSettingToFile("LAST_READ",urldecode($messageParts[0]),urldecode($messageParts[2]));
+    
+        $MATRIX_PIXELS_PER_SECOND = intval($MATRIX_PIXELS_PER_SECOND);
+        $MATRIX_FONT_SIZE = intval($MATRIX_FONT_SIZE);
+        $Position = "R2L";
+        if ($MATRIX_PIXELS_PER_SECOND == 0) {
+            $Position = "Center";
+        }
+        // echo  "$Matrix, $messageText, $Position, $MATRIX_FONT, $MATRIX_FONT_SIZE, $COLOR, $MATRIX_PIXELS_PER_SECOND, $MATRIX_FONT_ANTIALIAS";
+        
+        DisplayTextOnModel("localhost", $Matrix, $messageText, $Position, $MATRIX_FONT, $MATRIX_FONT_SIZE, $COLOR, $MATRIX_PIXELS_PER_SECOND, $MATRIX_FONT_ANTIALIAS);
+        if ($Position != "Center") {
+            $isLocked = GetModelData("localhost", $Matrix)["isLocked"];
+            while ($isLocked) {
+                sleep(1);
+                $isLocked = GetModelData("localhost", $Matrix)["isLocked"];
+            }
+        }
+    }
 }
 
 
 
 function printPluginsInstalled()
-
-
 {
 
 	global $PLUGINS,$pluginDirectory;
@@ -230,7 +194,7 @@ function printPluginsInstalled()
 	include_once 'excluded_plugins.inc.php';
 	//get all plugins
 	
-	$PLUGINS_INSTALLED = directoryToArray($pluginDirectory);//, $recursive)($pluginDirectory);
+	$PLUGINS_INSTALLED = directoryToArray($pluginDirectory, false);
 	//print_r($PLUGINS_INSTALLED);
 	
 
@@ -261,8 +225,6 @@ function printPluginsInstalled()
 }
 
 function printPixelsPerSecond($ELEMENT, $PIXELS_PER_SECOND)
-
-
 {
 
         global $PLUGINS,$pluginDirectory;
@@ -285,8 +247,6 @@ function printPixelsPerSecond($ELEMENT, $PIXELS_PER_SECOND)
         echo "</select>";
 }
 function printFontSizes($ELEMENT, $FONT_SIZE)
-
-
 {
 
         global $PLUGINS,$pluginDirectory;
@@ -312,39 +272,14 @@ function printFontSizes($ELEMENT, $FONT_SIZE)
 
 
 function printFontsInstalled($ELEMENT, $FONT)
-
-
 {
 
 	// this uses the fpp-matrix tools plugin to get the fonts that it can use!
 	
 	
         global $DEBUG,$PLUGINS,$pluginDirectory, $fpp_matrixtools_Plugin_Script, $fpp_matrixtools_Plugin;
-        
-      //  $fpp_matrixtools_Plugin = "fpp-matrixtools";
-       // $fpp_matrixtools_Plugin_Script = "scripts/matrixtools";
-	
-        
-        $fontsDirectory = "/usr/share/fonts/truetype/";
 
-	//$FONTS_LIST_CMD = "/usr/bin/fc-list";
-	
-	//$FONT_LIST = system($FONTS_LIST_CMD);
-	//if($DEBUG)
-	//	print_r($FONT_LIST);
-	
-       // $FONTS_INSTALLED = directoryToArray($fontsDirectory, true);//, $recursive)($pluginDirectory);
-
-        $MatrixToolsFontsCMD = $pluginDirectory."/".$fpp_matrixtools_Plugin . "/".$fpp_matrixtools_Plugin_Script. " --getfontlist";
-        
-        exec($MatrixToolsFontsCMD, $fontsList);
-     //   print_r($fontsList);
-        
-       
-       // $FONTS_INSTALLED = explode(" ",$fontsList);
-
-      //  print_r($FONTS_INSTALLED);
-        //print_r($PLUGINS_READ);
+    $fontsList = GetFonts("localhost");
 
         echo "<select name=\"".$ELEMENT."\">";
 
@@ -418,7 +353,7 @@ function getRunningPlaylist() {
 	//now we should have had something
 	return $playlistName;
 }
-function logEntry($data,$logLevel=1,$sourceFile, $sourceLine) {
+function logEntry($data,$logLevel=1, $sourceFile = "", $sourceLine = "") {
 
 	global $logFile,$myPid, $LOG_LEVEL;
 
@@ -438,8 +373,6 @@ function logEntry($data,$logLevel=1,$sourceFile, $sourceLine) {
 		$logWrite= fopen($logFile, "a") or die("Unable to open file!");
 		fwrite($logWrite, date('Y-m-d h:i:s A',time()).": ".$data."\n");
 		fclose($logWrite);
-
-
 }
 
 
