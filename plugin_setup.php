@@ -22,7 +22,7 @@ $logFile = $settings['logDirectory']."/".$pluginName.".log";
 $pluginUpdateFile = $settings['pluginDirectory']."/".$pluginName."/"."pluginUpdate.inc";
 
 
-$gitURL = "https://github.com/LightsOnHudson/FPP-Plugin-Matrix-Message.git";
+$gitURL = "https://github.com/FalconChristmas/FPP-Plugin-Matrix-Message.git";
 
 logEntry("plugin update file: ".$pluginUpdateFile);
 
