@@ -2,7 +2,7 @@
 <?
 //error_reporting(0);
 
-$pluginName ="MatrixMessage";
+$pluginName = basename(dirname(__FILE__));
 $myPid = getmypid();
 
 $DEBUG=false;

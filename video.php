@@ -6,7 +6,7 @@ $myPid = getmypid();
 
 include_once "/opt/fpp/www/common.php";
 include_once "functions.inc.php";
-$pluginName = "MatrixMessage";
+$pluginName = basename(dirname(__FILE__));
 $fpp_matrixtools_Plugin = "fpp-matrixtools";
 $fpp_matrixtools_Plugin_Script = "scripts/matrixtools";
 $FPP_MATRIX_PLUGIN_ENABLED=false;

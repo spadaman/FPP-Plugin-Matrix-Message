@@ -5,7 +5,7 @@
 //Oct 31: Installed the ability to send a message directly from a plugin using 'subscribedPlugin' and 'onDemandMessage'
 
 
-$pluginName = basename(dirname(__FILE__));;
+$pluginName = basename(dirname(__FILE__));
 $MatrixMessageVersion = "2.0";
 $myPid = getmypid();
 
