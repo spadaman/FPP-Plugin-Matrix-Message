@@ -1,5 +1,4 @@
-#!/usr/bin/php
-<?
+<?php
 //error_reporting(0);
 //TODO:
 //Oct 31: Installed the ability to send a message directly from a plugin using 'subscribedPlugin' and 'onDemandMessage'
@@ -96,6 +95,7 @@ if (isset($MATRIX_FONT_ANTIALIAS) && $MATRIX_FONT_ANTIALIAS == "1") {
 }
 $COLOR= urldecode($pluginSettings['COLOR']);
 $MATRIX_PIXELS_PER_SECOND = $pluginSettings['PIXELS_PER_SECOND'];
+$DURATION = $pluginSettings['DURATION'];
 
 $INCLUDE_TIME = urldecode($pluginSettings['INCLUDE_TIME']);
 $TIME_FORMAT = urldecode($pluginSettings['TIME_FORMAT']);
@@ -160,6 +160,13 @@ if (isset($_GET['onDemandMessage'])) {
 	logEntry("Receiving an onDemandMessage from subscribed plugin: ".$subscribedPlugin);
 	$MATRIX_PLUGIN_OPTIONS = $subscribedPlugin;
 }
+
+$waitForScroll = true;
+if (isset($_GET['nowait'])) {
+    $waitForScroll = false;
+}
+
+
 
 $MATRIX_ACTIVE = false;
         
@@ -226,7 +233,6 @@ if ($MESSAGE_QUEUE_PLUGIN_ENABLED) {
         lockHelper::unlock();
         exit(0);
 }
-disableMatrixToolOutput($Matrix);
 
 lockHelper::unlock();
 

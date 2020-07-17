@@ -78,7 +78,7 @@ function createMatrixEventFile() {
     
     
 function outputMessages($queueMessages) {
-	global $DEBUG, $pluginDirectory,$MESSAGE_TIMEOUT, $fpp_matrixtools_Plugin, $fpp_matrixtools_Plugin_Script,$Matrix,$MATRIX_FONT,$MATRIX_FONT_SIZE,$MATRIX_PIXELS_PER_SECOND,$COLOR, $INCLUDE_TIME, $TIME_FORMAT, $HOUR_FORMAT,$SEPARATOR, $MATRIX_FONT_ANTIALIAS;
+	global $DEBUG, $pluginDirectory,$MESSAGE_TIMEOUT, $fpp_matrixtools_Plugin, $fpp_matrixtools_Plugin_Script,$Matrix,$MATRIX_FONT,$MATRIX_FONT_SIZE,$MATRIX_PIXELS_PER_SECOND,$COLOR, $INCLUDE_TIME, $TIME_FORMAT, $HOUR_FORMAT,$SEPARATOR, $MATRIX_FONT_ANTIALIAS, $waitForScroll,$DURATION,$overlayMode;
 
 	//print_r($queueMessages);
 	
@@ -128,7 +128,20 @@ function outputMessages($queueMessages) {
 	} 
 	
 
-	enableMatrixToolOutput();
+    $auto = "false";
+    if ($waitForScroll == false) {
+        if ($overlayMode == 1) {
+            $auto = "Enabled";
+        } else if ($overlayMode == 2) {
+            $auto = "Transparent";
+        }
+        if ($overlayMode == 3) {
+            $auto = "Transparent RGB";
+        }
+    }
+    if ($auto == "false") {
+        enableMatrixToolOutput();
+    }
 
     for ($i=0;$i<=count($queueMessages)-1;$i++) {
         $messageText = "";
@@ -172,15 +185,24 @@ function outputMessages($queueMessages) {
             $Position = "Center";
         }
         // echo  "$Matrix, $messageText, $Position, $MATRIX_FONT, $MATRIX_FONT_SIZE, $COLOR, $MATRIX_PIXELS_PER_SECOND, $MATRIX_FONT_ANTIALIAS";
-        
-        DisplayTextOnModel("localhost", $Matrix, $messageText, $Position, $MATRIX_FONT, $MATRIX_FONT_SIZE, $COLOR, $MATRIX_PIXELS_PER_SECOND, $MATRIX_FONT_ANTIALIAS);
-        if ($Position != "Center") {
-            $isLocked = GetModelData("localhost", $Matrix)["isLocked"];
-            while ($isLocked) {
-                sleep(1);
+                
+        DisplayTextOnModel("localhost", $Matrix, $messageText, $Position, $MATRIX_FONT, $MATRIX_FONT_SIZE, $COLOR, $MATRIX_PIXELS_PER_SECOND, $MATRIX_FONT_ANTIALIAS, $DURATION, $auto);
+        if ($waitForScroll) {
+            if ($Position != "Center") {
                 $isLocked = GetModelData("localhost", $Matrix)["isLocked"];
+                while ($isLocked) {
+                    sleep(1);
+                    $isLocked = GetModelData("localhost", $Matrix)["isLocked"];
+                }
+            } else {
+                sleep($DURATION);
             }
         }
+    }
+    
+    
+    if ($waitForScroll == true) {
+        disableMatrixToolOutput($Matrix);
     }
 }
 

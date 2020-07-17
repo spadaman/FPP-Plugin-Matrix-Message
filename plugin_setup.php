@@ -46,7 +46,8 @@ if(isset($_POST['submit']))
 	WriteSettingToFile("FONT",urlencode($_POST["FONT"]),$pluginName);
     WriteSettingToFile("FONT_ANTIALIAS",urlencode($_POST["FONT_ANTIALIAS"]),$pluginName);
 	WriteSettingToFile("FONT_SIZE",urlencode($_POST["FONT_SIZE"]),$pluginName);
-	WriteSettingToFile("PIXELS_PER_SECOND",urlencode($_POST["PIXELS_PER_SECOND"]),$pluginName);
+    WriteSettingToFile("PIXELS_PER_SECOND",urlencode($_POST["PIXELS_PER_SECOND"]),$pluginName);
+    WriteSettingToFile("DURATION",urlencode($_POST["DURATION"]),$pluginName);
 	WriteSettingToFile("COLOR",urlencode($_POST["COLOR"]),$pluginName);
 
 	
@@ -95,6 +96,10 @@ if (!isset($FONT_SIZE) || $FONT_SIZE == "") {
 }
 $FONT_ANTIALIAS= $pluginSettings['FONT_ANTIALIAS'];
 $PIXELS_PER_SECOND= $pluginSettings['PIXELS_PER_SECOND'];
+$DURATION=10;
+if (isset($pluginSettings['DURATION'])) {
+    $DURATION=$pluginSettings['DURATION'];
+}
 $COLOR= urldecode($pluginSettings['COLOR']);
 
 $INCLUDE_TIME = urldecode($pluginSettings['INCLUDE_TIME']);
@@ -239,7 +244,9 @@ echo "<p/> \n";
 
 echo "Pixels per second: \n";
 printPixelsPerSecond("PIXELS_PER_SECOND",$PIXELS_PER_SECOND);
-
+echo "<p/> \n";
+echo "Duration (s): \n";
+echo "<input name='DURATION' type='number' min='0' max='300' value='" . $DURATION . "'/>";
 echo "<p/> \n";
 
 echo "Color: (#RRGGBB or common name 'red' or for a random color type 'random') \n";
