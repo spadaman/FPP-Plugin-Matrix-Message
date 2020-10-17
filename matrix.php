@@ -216,13 +216,21 @@ if ($MESSAGE_QUEUE_PLUGIN_ENABLED) {
                 //get new messages
                 $queueMessages = null;
                 
-                $queueMessages = getNewPluginMessages($MATRIX_PLUGIN_OPTIONS);
-                $queueCount = count($queueMessages);
-                logEntry("Matrix Message NEW QUEUE COUNT: ".$queueCount);
+                //logEntry("MAX_MESSAGES_PER_RUN = " + ReadSettingFromFile("MAX_MESSAGES_PER_RUN",$pluginName));
+                logEntry("MAX_MESSAGES_PER_RUN = " + $pluginSettings['MAX_MESSAGES_PER_RUN']);
                 
-                sleep(1);
-			}
-       	} while ($queueCount > 0) ;
+                // @spadaman modified. Changes the following to only allow x messages per loop.
+                if ($LOOP_COUNT < $pluginSettings['MAX_MESSAGES_PER_RUN']) {
+                    $queueMessages = getNewPluginMessages($MATRIX_PLUGIN_OPTIONS);
+                    $queueCount = count($queueMessages);
+                    logEntry("Matrix Message NEW QUEUE COUNT: ".$queueCount);
+                    
+                    sleep(1);
+                }
+            }
+            
+        // @spadaman modified this to also incorporate the LOOP_COUNT.
+       	} while ($queueCount > 0 &&  $LOOP_COUNT < $pluginSettings['MAX_MESSAGES_PER_RUN']) ;
         
     } else {
        	logEntry("MATRIX MESSAGE: No messages  exists??");

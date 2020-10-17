@@ -90,6 +90,11 @@ function outputMessages($queueMessages) {
 		return;
 	}
 	
+	// @spadaman added. Start an effect when the matrix starts.
+	$effect = ReadSettingFromFile("EFFECT_FOR_DISPLAY","FPP-Plugin-Matrix-Message");
+	if ($effect !== "") {
+		exec("fpp -e ".$effect);
+	}
 
 	If (strtoupper(trim($COLOR)) == "RANDOM") {
 		//print_r ("Start counter");
@@ -202,7 +207,14 @@ function outputMessages($queueMessages) {
     
     
     if ($waitForScroll == true) {
-        disableMatrixToolOutput($Matrix);
+		disableMatrixToolOutput($Matrix);
+			
+		// @spadaman added. Stop the effect (if we started it) when the scrolling finishes.
+		$effect = ReadSettingFromFile("EFFECT_FOR_DISPLAY","FPP-Plugin-Matrix-Message");
+		if ($effect !== "") {
+			exec("fpp -E ".$effect);
+		}
+		
     }
 }
 

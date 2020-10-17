@@ -49,7 +49,11 @@ if(isset($_POST['submit']))
     WriteSettingToFile("PIXELS_PER_SECOND",urlencode($_POST["PIXELS_PER_SECOND"]),$pluginName);
     WriteSettingToFile("DURATION",urlencode($_POST["DURATION"]),$pluginName);
 	WriteSettingToFile("COLOR",urlencode($_POST["COLOR"]),$pluginName);
+	WriteSettingToFile("FONT_SIZE",urlencode($_POST["FONT_SIZE"]),$pluginName);
 
+	// @spadaman added.
+	WriteSettingToFile("MAX_MESSAGES_PER_RUN",urlencode($_POST["MAX_MESSAGES_PER_RUN"]),$pluginName);
+	WriteSettingToFile("EFFECT_FOR_DISPLAY",urlencode($_POST["EFFECT_FOR_DISPLAY"]),$pluginName);
 	
 	WriteSettingToFile("LAST_READ",urlencode($_POST["LAST_READ"]),$pluginName);
     if (isset($_POST["MESSAGE_TIMEOUT"])) {
@@ -105,6 +109,10 @@ $COLOR= urldecode($pluginSettings['COLOR']);
 $INCLUDE_TIME = urldecode($pluginSettings['INCLUDE_TIME']);
 $TIME_FORMAT = urldecode($pluginSettings['TIME_FORMAT']);
 $HOUR_FORMAT = urldecode($pluginSettings['HOUR_FORMAT']);
+
+//@spadaman added.
+$MAX_MESSAGES_PER_RUN = $pluginSettings['MAX_MESSAGES_PER_RUN'];
+$EFFECT_FOR_DISPLAY = $pluginSettings['EFFECT_FOR_DISPLAY'];
 
 if (isset($pluginSettings['DEBUG'])) {
     $DEBUG = urldecode($pluginSettings['DEBUG']);
@@ -257,6 +265,20 @@ if($COLOR == "") {
 }
 echo "<input type=\"text\" name=\"COLOR\" value=\"".$COLOR."\"> \n";
 echo "<p/> \n";
+
+//@spadaman added.
+echo "<p/> \n";
+echo "Max messages per run: \n";
+echo "<input name='MAX_MESSAGES_PER_RUN' type='number' min='0' max='300' value='" . $MAX_MESSAGES_PER_RUN . "'/>";
+echo "<p/> \n";
+echo "<p/> \n";
+echo "Effect to display when putting a message on the matrix: \n";
+echo "<input name='EFFECT_FOR_DISPLAY' type='text' value='" . $EFFECT_FOR_DISPLAY . "'/>";
+echo "<p/> \n";
+
+
+
+
 //echo "<hr> \n";
 //echo "Example text: \n";
 //echo "<hr/> \n";
