@@ -182,6 +182,13 @@ if ($MESSAGE_QUEUE_PLUGIN_ENABLED) {
 	
 	$messageCount = count($queueMessages);
     if ($messageCount > 0) {
+
+		// @spadaman added. Stop the effect (if we started it) when the scrolling finishes.
+		$effect = ReadSettingFromFile("EFFECT_FOR_DISPLAY","FPP-Plugin-Matrix-Message");
+		if ($effect !== "") {
+			exec("fpp -C  \"FSEQ Effect Start\" ".$effect." 0 0 ");
+		}
+
         //if($queueMessages != null || $queueMessages != "") {
         $MATRIX_ACTIVE = true;
         $queueCount =0;
@@ -230,7 +237,13 @@ if ($MESSAGE_QUEUE_PLUGIN_ENABLED) {
             }
             
         // @spadaman modified this to also incorporate the LOOP_COUNT.
-       	} while ($queueCount > 0 &&  $LOOP_COUNT < $pluginSettings['MAX_MESSAGES_PER_RUN']) ;
+           } while ($queueCount > 0 &&  $LOOP_COUNT < $pluginSettings['MAX_MESSAGES_PER_RUN']) ;
+           
+		// @spadaman added. Stop the effect (if we started it) when the scrolling finishes.
+		$effect = ReadSettingFromFile("EFFECT_FOR_DISPLAY","FPP-Plugin-Matrix-Message");
+		if ($effect !== "") {
+			exec("fpp -C  \"FSEQ Effect Stop\" ".$effect);
+        }
         
     } else {
        	logEntry("MATRIX MESSAGE: No messages  exists??");
